@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
 	 **/
 	FILE *fp;
 	fp=fopen(FILE_NAME, "r");
-	char info[7][MAX_SIZE];
+	char info[4][MAX_SIZE];
 	fscanf(fp, "%s %s %s %s", 
 		info[0], info[1], info[2], info[3]);
 	fclose(fp);
