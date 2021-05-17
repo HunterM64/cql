@@ -7,7 +7,7 @@
  * and displays them using a simple SELECT query.
  **/
 
-#include <mysql.h>
+#include <mysql/mysql.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -94,6 +94,12 @@ int main(int argc, char **argv) {
 			printf("%s ", row[i] ? row[i] : "NULL");
 		}
 		printf("\n");
+	}
+
+	if(mysql_query(con, "drop table if exists items")) {
+		finish_with_error(con);
+	} else {
+		printf("definitely dropped table items\n");
 	}
 
 	mysql_free_result(result);
