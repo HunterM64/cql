@@ -10,15 +10,25 @@
 #include <mysql/mysql.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define FILE_NAME "./.env"
 #define MAX_SIZE 10
 
+// this one's just up here
 void finish_with_error(MYSQL *con) {
 	fprintf(stderr, "%s\n", mysql_error(con));
 	mysql_close(con);
 	exit(1);
 }
+
+// prototypes
+void setupItems(MYSQL *con);
+void enterCommands(MYSQL *con);
+
+// global because why not
+char line[100];
+char quit[] = "quit";
 
 int main(int argc, char **argv) {
 
@@ -45,11 +55,37 @@ int main(int argc, char **argv) {
 
 	if (mysql_real_connect(con, info[0], info[1], info[2], info[3], 0, NULL, 0) == NULL) {
 		finish_with_error(con);
-	} else {
-		printf("CONNECTION SUCCESSFUL\n");
 	}
 
-	if(mysql_query(con, "drop table if exists items")) {
+	int choice;
+
+	while (choice != 0) {
+		printf("\n(0) quit\n(1) set up table items\n(2) enter manual command\n\n>> ");
+		fgets(line, sizeof(line), stdin);
+		sscanf(line, "%d", &choice);
+
+		switch(choice) {
+			case 0:
+				break;
+			case 1:
+				setupItems(con);
+				break;
+			case 2:
+				enterCommands(con);
+				break;
+			default:
+				printf("that wasn't an option.\n");
+				break;
+		}
+	}
+
+	mysql_close(con);
+
+	return 0;
+}
+
+void setupItems(MYSQL *con) {
+		if(mysql_query(con, "drop table if exists items")) {
 		finish_with_error(con);
 	} else {
 		printf("probably dropped table items\n");
@@ -96,14 +132,49 @@ int main(int argc, char **argv) {
 		printf("\n");
 	}
 
-	if(mysql_query(con, "drop table if exists items")) {
-		finish_with_error(con);
-	} else {
-		printf("definitely dropped table items\n");
-	}
+	// if(mysql_query(con, "drop table if exists items")) {
+	// 	finish_with_error(con);
+	// } else {
+	// 	printf("definitely dropped table items\n");
+	// }
 
 	mysql_free_result(result);
-	mysql_close(con);
 
-	return 0;
+	return;
+}
+
+void enterCommands(MYSQL *con) {
+		
+	printf("Enter command\n>> ");
+	fgets(line, sizeof(line), stdin);
+
+
+	if(strcmp(line, "quit\n") == 0) {
+		return;
+	} else {
+		if(mysql_query(con, line)) {
+			finish_with_error(con);
+		} else {
+			printf("command successful.\n");
+		}
+
+		MYSQL_RES *res = mysql_store_result(con);
+
+		// if(res == NULL) {
+		// 	finish_with_error(con);
+		// }
+
+		int num_fields = mysql_num_fields(res);
+
+		MYSQL_ROW row;
+
+		while ((row = mysql_fetch_row(res))) {
+			for (int i = 0; i < num_fields; i++) {
+				printf("%s ", row[i] ? row[i] : "NULL");
+			}
+			printf("\n");
+		}
+
+		mysql_free_result(res);
+	}
 }
